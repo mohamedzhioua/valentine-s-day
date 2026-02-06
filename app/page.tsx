@@ -287,6 +287,19 @@ export default function Page() {
           </>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="absolute bottom-4 left-0 right-0 text-center text-sm text-gray-500">
+        Made by{" "}
+        <a
+          href="https://www.linkedin.com/in/mohamed-zhioua/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-pink-600 hover:text-red-500 font-medium underline underline-offset-2 transition-colors"
+        >
+          Zhioua Mohamed
+        </a>
+      </footer>
     </div>
   );
 }
