@@ -23,30 +23,37 @@ export default function Page() {
   const confettiIdRef = useRef(0);
   const lastMoveTimeRef = useRef(0);
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
 
-  // Initialize no button position inline with yes button
+  // Detect touch device on mount
   useEffect(() => {
+    const touchDevice =
+      "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    setIsTouchDevice(touchDevice);
     setNoButtonPos({ x: 0, y: 0 });
   }, []);
 
-  // 12-second timer for cat appearance starting from first No attempt
+  // Timer for cat appearance - shorter on mobile (users have less patience)
   useEffect(() => {
     if (clicked || showCat || !firstNoAttemptTime) return;
 
+    // 8 seconds on mobile, 12 seconds on desktop
+    const timeoutDuration = isTouchDevice ? 8000 : 12000;
+
     const timer = setTimeout(() => {
       setShowCat(true);
-    }, 6000);
+    }, timeoutDuration);
 
     return () => clearTimeout(timer);
-  }, [clicked, showCat, firstNoAttemptTime]);
+  }, [clicked, showCat, firstNoAttemptTime, isTouchDevice]);
 
-  // Track mouse and touch position to move No button away
+  // Track mouse position to move No button away (desktop only)
+  // On mobile, we rely on tap-to-escape which is simpler and more intuitive
   useEffect(() => {
-    const checkProximityAndMove = (
-      clientX: number,
-      clientY: number,
-      detectionRadius: number
-    ) => {
+    // Skip proximity detection on touch devices - tap is enough
+    if (isTouchDevice) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
       if (clicked || showCat) return;
 
       if (noButtonRef.current) {
@@ -54,39 +61,20 @@ export default function Page() {
         const buttonCenterX = rect.left + rect.width / 2;
         const buttonCenterY = rect.top + rect.height / 2;
         const distance = Math.sqrt(
-          Math.pow(clientX - buttonCenterX, 2) +
-            Math.pow(clientY - buttonCenterY, 2)
+          Math.pow(e.clientX - buttonCenterX, 2) +
+            Math.pow(e.clientY - buttonCenterY, 2)
         );
 
-        // Move button away if within detection radius (with debounce)
-        if (
-          distance < detectionRadius &&
-          Date.now() - lastMoveTimeRef.current > 200
-        ) {
+        // Move button away if cursor within 80px (with debounce)
+        if (distance < 80 && Date.now() - lastMoveTimeRef.current > 200) {
           moveNoButton();
         }
       }
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      // 80px detection radius for mouse (more precise)
-      checkProximityAndMove(e.clientX, e.clientY, 80);
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      if (!touch) return;
-      // 120px detection radius for touch (fingers are less precise)
-      checkProximityAndMove(touch.clientX, touch.clientY, 120);
-    };
-
     window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("touchmove", handleTouchMove, { passive: true });
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("touchmove", handleTouchMove);
-    };
-  }, [clicked, showCat]);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [clicked, showCat, isTouchDevice]);
 
   const moveNoButton = () => {
     lastMoveTimeRef.current = Date.now();
@@ -222,22 +210,24 @@ export default function Page() {
                 Yes ❤️
               </button>
 
-              {/* No button - runs away on mouse hover/click and touch */}
+              {/* No button - runs away on mouse hover/click and touch tap */}
               <button
                 ref={noButtonRef}
                 onMouseDown={handleNoMouseDown}
-                onMouseEnter={handleNoClick}
+                onMouseEnter={!isTouchDevice ? handleNoClick : undefined}
                 onClick={handleNoClick}
                 onTouchStart={handleNoTouchStart}
-                className="px-8 md:px-12 py-4 md:py-5 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold text-lg md:text-xl rounded-full transition-all duration-200 shadow-lg cursor-pointer whitespace-nowrap touch-none"
+                className="px-8 md:px-12 py-4 md:py-5 bg-gray-300 hover:bg-gray-400 active:bg-gray-500 active:scale-90 text-gray-700 font-bold text-lg md:text-xl rounded-full shadow-lg cursor-pointer whitespace-nowrap touch-none select-none"
                 style={
                   noButtonPos.x === 0 && noButtonPos.y === 0
-                    ? {}
+                    ? { transition: "transform 0.1s ease-out" }
                     : {
                         position: "fixed",
                         left: `${noButtonPos.x}px`,
                         top: `${noButtonPos.y}px`,
                         zIndex: 40,
+                        transition:
+                          "left 0.15s ease-out, top 0.15s ease-out, transform 0.1s ease-out",
                       }
                 }
               >
