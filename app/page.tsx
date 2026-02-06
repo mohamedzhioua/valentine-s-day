@@ -241,16 +241,16 @@ export default function Page() {
           </>
         )}
 
-        {/* Cat overlay - appears after 50 seconds */}
+        {/* Cat overlay - appears after 12 seconds */}
         {showCat && !clicked && (
           <>
             {/* Dimmed background overlay */}
             <div className="fixed inset-0 bg-black bg-opacity-80 z-40 animate-fade-in-scale" />
 
-            {/* Cat modal */}
-            <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+            {/* Cat modal - centered like first image */}
+            <div className="fixed inset-0 flex items-center justify-center z-50">
               <div className="text-center px-6 max-w-3xl animate-slide-up-pop">
-                {/* Cat image – appears after 20s of clicking No */}
+                {/* Cat image */}
                 <div className="mb-8 inline-block relative">
                   <img
                     src="/cat.png"
@@ -262,17 +262,25 @@ export default function Page() {
                   />
                 </div>
 
-                {/* Text content */}
-                <div className="mt-12">
+                {/* Text content - like first image */}
+                <div className="mt-8">
                   <h2 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight drop-shadow-lg">
                     Time's up, buddy!
                   </h2>
                   <p className="text-xl md:text-2xl text-pink-100 mb-2 font-bold drop-shadow-md">
                     You had your chance
                   </p>
-                  <p className="text-lg md:text-xl text-pink-200 font-medium drop-shadow-md leading-relaxed">
+                  <p className="text-lg md:text-xl text-pink-200 font-medium drop-shadow-md leading-relaxed mb-8">
                     Now just click YES already! The cat's getting impatient
                   </p>
+
+                  {/* Clickable button to close overlay and go back */}
+                  <button
+                    onClick={() => setShowCat(false)}
+                    className="px-10 md:px-14 py-4 md:py-5 bg-gradient-to-r from-red-500 to-pink-500 text-white font-bold text-xl md:text-2xl rounded-full hover:from-red-600 hover:to-pink-600 transition-all duration-300 transform hover:scale-110 active:scale-95 shadow-lg hover:shadow-2xl cursor-pointer animate-pulse-glow"
+                  >
+                    Go click Yes! 💖
+                  </button>
                 </div>
               </div>
             </div>
