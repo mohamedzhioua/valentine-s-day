@@ -1,92 +1,99 @@
-'use client'
+"use client";
 
-import React from "react"
+import React from "react";
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from "react";
 
 export default function Page() {
-  const [clicked, setClicked] = useState(false)
-  const [noButtonPos, setNoButtonPos] = useState({ x: 0, y: 0 })
-  const [failAttempts, setFailAttempts] = useState(0)
-  const [showCat, setShowCat] = useState(false)
-  const [firstNoAttemptTime, setFirstNoAttemptTime] = useState<number | null>(null)
-  const [hearts, setHearts] = useState<Array<{ id: number; left: number; top: number }>>([])
-  const [confetti, setConfetti] = useState<Array<{ id: number; left: number; top: number; delay: number }>>([])
-  const noButtonRef = useRef<HTMLButtonElement>(null)
-  const heartIdRef = useRef(0)
-  const confettiIdRef = useRef(0)
-  const lastMoveTimeRef = useRef(0)
-  const [timeoutReached, setTimeoutReached] = useState(false)
+  const [clicked, setClicked] = useState(false);
+  const [noButtonPos, setNoButtonPos] = useState({ x: 0, y: 0 });
+  const [failAttempts, setFailAttempts] = useState(0);
+  const [showCat, setShowCat] = useState(false);
+  const [firstNoAttemptTime, setFirstNoAttemptTime] = useState<number | null>(
+    null
+  );
+  const [hearts, setHearts] = useState<
+    Array<{ id: number; left: number; top: number }>
+  >([]);
+  const [confetti, setConfetti] = useState<
+    Array<{ id: number; left: number; top: number; delay: number }>
+  >([]);
+  const noButtonRef = useRef<HTMLButtonElement>(null);
+  const heartIdRef = useRef(0);
+  const confettiIdRef = useRef(0);
+  const lastMoveTimeRef = useRef(0);
+  const [timeoutReached, setTimeoutReached] = useState(false);
 
   // Initialize no button position inline with yes button
   useEffect(() => {
-    setNoButtonPos({ x: 0, y: 0 })
-  }, [])
+    setNoButtonPos({ x: 0, y: 0 });
+  }, []);
 
   // 12-second timer for cat appearance starting from first No attempt
   useEffect(() => {
-    if (clicked || showCat || !firstNoAttemptTime) return
+    if (clicked || showCat || !firstNoAttemptTime) return;
 
     const timer = setTimeout(() => {
-      setShowCat(true)
-    }, 12000)
+      setShowCat(true);
+    }, 6000);
 
-    return () => clearTimeout(timer)
-  }, [clicked, showCat, firstNoAttemptTime])
+    return () => clearTimeout(timer);
+  }, [clicked, showCat, firstNoAttemptTime]);
 
   // Track mouse position and move No button away
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (clicked || showCat) return
+      if (clicked || showCat) return;
 
       if (noButtonRef.current) {
-        const rect = noButtonRef.current.getBoundingClientRect()
-        const buttonCenterX = rect.left + rect.width / 2
-        const buttonCenterY = rect.top + rect.height / 2
+        const rect = noButtonRef.current.getBoundingClientRect();
+        const buttonCenterX = rect.left + rect.width / 2;
+        const buttonCenterY = rect.top + rect.height / 2;
         const distance = Math.sqrt(
-          Math.pow(e.clientX - buttonCenterX, 2) + Math.pow(e.clientY - buttonCenterY, 2)
-        )
+          Math.pow(e.clientX - buttonCenterX, 2) +
+            Math.pow(e.clientY - buttonCenterY, 2)
+        );
 
         // If cursor is within 80px, move button away (with debounce)
         if (distance < 80 && Date.now() - lastMoveTimeRef.current > 200) {
-          moveNoButton()
+          moveNoButton();
         }
       }
-    }
+    };
 
-    window.addEventListener('mousemove', handleMouseMove)
-    return () => window.removeEventListener('mousemove', handleMouseMove)
-  }, [clicked, showCat])
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [clicked, showCat]);
 
   const moveNoButton = () => {
-    lastMoveTimeRef.current = Date.now()
+    lastMoveTimeRef.current = Date.now();
     // 20s timer is started on first try to click (handleNoMouseDown), not here
     // Calculate boundaries to keep button fully visible
-    const buttonWidth = 140
-    const buttonHeight = 70
-    const padding = 20
-    
-    const maxX = window.innerWidth - buttonWidth - padding
-    const maxY = window.innerHeight - buttonHeight - padding
-    
-    const randomX = Math.max(padding, Math.random() * maxX)
-    const randomY = Math.max(padding, Math.random() * maxY)
-    
-    setNoButtonPos({ x: randomX, y: randomY })
-    setFailAttempts((prev) => prev + 1)
-  }
+    const buttonWidth = 140;
+    const buttonHeight = 70;
+    const padding = 20;
+
+    const maxX = window.innerWidth - buttonWidth - padding;
+    const maxY = window.innerHeight - buttonHeight - padding;
+
+    const randomX = Math.max(padding, Math.random() * maxX);
+    const randomY = Math.max(padding, Math.random() * maxY);
+
+    setNoButtonPos({ x: randomX, y: randomY });
+    setFailAttempts((prev) => prev + 1);
+  };
 
   const handleYesClick = () => {
-    setClicked(true)
-    setShowCat(false)
-    
+    setClicked(true);
+    setShowCat(false);
+
     // Create floating hearts
     const newHearts = Array.from({ length: 20 }, (_, i) => ({
       id: heartIdRef.current++,
       left: Math.random() * 100,
       top: 100,
-    }))
-    setHearts(newHearts)
+    }));
+    setHearts(newHearts);
 
     // Create confetti
     const newConfetti = Array.from({ length: 50 }, (_, i) => ({
@@ -94,28 +101,28 @@ export default function Page() {
       left: Math.random() * 100,
       top: -10,
       delay: Math.random() * 0.5,
-    }))
-    setConfetti(newConfetti)
-  }
+    }));
+    setConfetti(newConfetti);
+  };
 
   // Start 20s timer on first try to click No (mousedown), not on first successful click
   const handleNoMouseDown = () => {
     // Start timer on first attempt
     if (!firstNoAttemptTime) {
-      setFirstNoAttemptTime(Date.now())
+      setFirstNoAttemptTime(Date.now());
     }
     // Move button away
-    moveNoButton()
-  }
+    moveNoButton();
+  };
 
   const handleNoClick = (e: React.MouseEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     // Also start timer if not started (backup for hover case)
     if (!firstNoAttemptTime) {
-      setFirstNoAttemptTime(Date.now())
+      setFirstNoAttemptTime(Date.now());
     }
-    moveNoButton()
-  }
+    moveNoButton();
+  };
 
   return (
     <div className="relative w-full min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 via-white to-red-50 overflow-hidden">
@@ -151,10 +158,10 @@ export default function Page() {
             top: `${item.top}%`,
             animation: `float ${3 + Math.random() * 2}s ease-in forwards`,
             animationDelay: `${item.delay}s`,
-            fontSize: '1.5rem',
+            fontSize: "1.5rem",
           }}
         >
-          {'💕🎉✨💖💝'.split('')[Math.floor(Math.random() * 5)]}
+          {"💕🎉✨💖💝".split("")[Math.floor(Math.random() * 5)]}
         </div>
       ))}
 
@@ -196,7 +203,7 @@ export default function Page() {
                   noButtonPos.x === 0 && noButtonPos.y === 0
                     ? {}
                     : {
-                        position: 'fixed',
+                        position: "fixed",
                         left: `${noButtonPos.x}px`,
                         top: `${noButtonPos.y}px`,
                         zIndex: 40,
@@ -213,8 +220,6 @@ export default function Page() {
                 You are persistent! {failAttempts} attempts so far
               </p>
             )}
-
-
           </>
         ) : (
           <>
@@ -241,7 +246,7 @@ export default function Page() {
           <>
             {/* Dimmed background overlay */}
             <div className="fixed inset-0 bg-black bg-opacity-80 z-40 animate-fade-in-scale" />
-            
+
             {/* Cat modal */}
             <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
               <div className="text-center px-6 max-w-3xl animate-slide-up-pop">
@@ -252,7 +257,7 @@ export default function Page() {
                     alt="Cute cat saying click Yes"
                     className="w-64 h-64 md:w-80 md:h-80 rounded-lg object-cover"
                     style={{
-                      filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.5))',
+                      filter: "drop-shadow(0 20px 40px rgba(0,0,0,0.5))",
                     }}
                   />
                 </div>
@@ -275,5 +280,5 @@ export default function Page() {
         )}
       </div>
     </div>
-  )
+  );
 }
