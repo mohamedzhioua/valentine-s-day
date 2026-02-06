@@ -40,9 +40,13 @@ export default function Page() {
     return () => clearTimeout(timer);
   }, [clicked, showCat, firstNoAttemptTime]);
 
-  // Track mouse position and move No button away
+  // Track mouse and touch position to move No button away
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const checkProximityAndMove = (
+      clientX: number,
+      clientY: number,
+      detectionRadius: number
+    ) => {
       if (clicked || showCat) return;
 
       if (noButtonRef.current) {
@@ -50,19 +54,38 @@ export default function Page() {
         const buttonCenterX = rect.left + rect.width / 2;
         const buttonCenterY = rect.top + rect.height / 2;
         const distance = Math.sqrt(
-          Math.pow(e.clientX - buttonCenterX, 2) +
-            Math.pow(e.clientY - buttonCenterY, 2)
+          Math.pow(clientX - buttonCenterX, 2) +
+            Math.pow(clientY - buttonCenterY, 2)
         );
 
-        // If cursor is within 80px, move button away (with debounce)
-        if (distance < 80 && Date.now() - lastMoveTimeRef.current > 200) {
+        // Move button away if within detection radius (with debounce)
+        if (
+          distance < detectionRadius &&
+          Date.now() - lastMoveTimeRef.current > 200
+        ) {
           moveNoButton();
         }
       }
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+      // 80px detection radius for mouse (more precise)
+      checkProximityAndMove(e.clientX, e.clientY, 80);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      // 120px detection radius for touch (fingers are less precise)
+      checkProximityAndMove(touch.clientX, touch.clientY, 120);
+    };
+
     window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("touchmove", handleTouchMove);
+    };
   }, [clicked, showCat]);
 
   const moveNoButton = () => {
@@ -105,8 +128,8 @@ export default function Page() {
     setConfetti(newConfetti);
   };
 
-  // Start 20s timer on first try to click No (mousedown), not on first successful click
-  const handleNoMouseDown = () => {
+  // Start timer on first try to click/tap No, then move button away
+  const handleNoInteraction = () => {
     // Start timer on first attempt
     if (!firstNoAttemptTime) {
       setFirstNoAttemptTime(Date.now());
@@ -115,13 +138,20 @@ export default function Page() {
     moveNoButton();
   };
 
+  const handleNoMouseDown = () => {
+    handleNoInteraction();
+  };
+
   const handleNoClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    // Also start timer if not started (backup for hover case)
-    if (!firstNoAttemptTime) {
-      setFirstNoAttemptTime(Date.now());
-    }
-    moveNoButton();
+    handleNoInteraction();
+  };
+
+  // Touch handler for mobile - move button when finger touches it
+  // Note: Don't call preventDefault() here as React touch events are passive
+  // The touch-none CSS class on the button handles preventing default behavior
+  const handleNoTouchStart = () => {
+    handleNoInteraction();
   };
 
   return (
@@ -192,13 +222,14 @@ export default function Page() {
                 Yes ❤️
               </button>
 
-              {/* No button - runs away; 20s timer starts on first try (mousedown) */}
+              {/* No button - runs away on mouse hover/click and touch */}
               <button
                 ref={noButtonRef}
                 onMouseDown={handleNoMouseDown}
                 onMouseEnter={handleNoClick}
                 onClick={handleNoClick}
-                className="px-8 md:px-12 py-4 md:py-5 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold text-lg md:text-xl rounded-full transition-all duration-200 shadow-lg cursor-pointer whitespace-nowrap"
+                onTouchStart={handleNoTouchStart}
+                className="px-8 md:px-12 py-4 md:py-5 bg-gray-300 hover:bg-gray-400 text-gray-700 font-bold text-lg md:text-xl rounded-full transition-all duration-200 shadow-lg cursor-pointer whitespace-nowrap touch-none"
                 style={
                   noButtonPos.x === 0 && noButtonPos.y === 0
                     ? {}
